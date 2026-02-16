@@ -6,6 +6,16 @@
 
 v0 通过反向思考来回答——剥离一切，直到只剩下核心。
 
+## 架构总览
+
+```sh
+User -> [LLM] -> tool_use? --yes--> [Bash] -> append result -> [LLM]
+                     |
+                    no -> Return text
+```
+
+整个 v0 就是这个循环：用户输入交给模型，模型决定是否调用 Bash，调用后结果反馈回模型，直到模型决定直接返回文本。
+
 ## 核心洞察
 
 Unix 哲学：一切皆文件，一切皆可管道。Bash 是这个世界的入口：
@@ -48,7 +58,7 @@ def chat(prompt, history=[]):
         results = []
         for b in r.content:
             if b.type == "tool_use":
-                out = subprocess.run(b.input["command"], shell=True, capture_output=True, text=True, timeout=300)
+                out = subprocess.run(b.input["command"], shell=True, capture_output=True, text=True, timeout=120)
                 results.append({"type": "tool_result", "tool_use_id": b.id, "content": out.stdout + out.stderr})
         history.append({"role": "user", "content": results})
 
@@ -83,7 +93,7 @@ if __name__ == "__main__":
 
 | 特性 | v0 | v3 |
 |------|----|----|
-| 代理类型 | 无 | explore/code/plan |
+| 代理类型 | 无 | Explore/general-purpose/Plan |
 | 工具过滤 | 无 | 白名单 |
 | 进度显示 | 普通 stdout | 行内更新 |
 | 代码复杂度 | ~50 行 | ~450 行 |
@@ -114,4 +124,4 @@ while True:
 
 **Bash 就是一切。**
 
-[← 返回 README](../README_zh.md)
+[← 返回 README](../README_zh.md) | [v1 →](./v1-模型即代理.md)
